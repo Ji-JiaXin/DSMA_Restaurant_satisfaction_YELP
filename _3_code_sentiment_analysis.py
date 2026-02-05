@@ -40,13 +40,8 @@ def vader_worker(batch):
 
 if __name__ == "__main__":
     freeze_support()
+    os.chdir("C:\\Users\\jijia\\Desktop\\Jijiaxin\\VŠ\\02_Master\\03_Zweite_WS_25-26\\DSMA\\seminar paper\\new_code\\more_relaxed")
 
-    # Set working directory
-    os.chdir(
-        "C:\\Users\\jijia\\Desktop\\Jijiaxin\\VŠ\\02_Master\\03_Zweite_WS_25-26\\DSMA\\seminar paper\\new_code\\more_relaxed"
-    )
-
-    # Load review data
     reviews = pd.read_csv("data7_df_review.csv")
 
     reviews["review_date"] = pd.to_datetime(reviews["review_date"], errors="coerce")
@@ -55,32 +50,25 @@ if __name__ == "__main__":
     reviews["text_clean"] = reviews["review_text"].apply(clean_text)
     reviews["text_clean"] = reviews["text_clean"].apply(fix_utf8)
 
-    # Prepare multiprocessing input
     chunk_size = 2000
     data = list(zip(reviews["review_id"], reviews["text_clean"]))
 
     chunks = [
         data[i:i + chunk_size]
-        for i in range(0, len(data), chunk_size)
-    ]
+        for i in range(0, len(data), chunk_size)]
 
     n_cores = min(4, cpu_count())
     print(f"Running VADER in {len(chunks)} chunks using {n_cores} cores.")
 
     with Pool(processes=n_cores) as pool:
         sentiment_chunks = list(
-            tqdm(pool.imap(vader_worker, chunks), total=len(chunks))
-        )
+            tqdm(pool.imap(vader_worker, chunks), total=len(chunks)))
 
-    # Flatten results
     sentiment_results = [row for chunk in sentiment_chunks for row in chunk]
     sentiment_df = pd.DataFrame(sentiment_results)
 
-    reviews_final = reviews.merge(
-        sentiment_df,
-        on="review_id",
-        how="left"
-    )
+    reviews_final = reviews.merge(sentiment_df,on="review_id",how="left")
 
     reviews_final.to_csv("data8_df_review_with_sentiment.csv", index=False)
     print("VADER sentiment analysis complete.")
+
