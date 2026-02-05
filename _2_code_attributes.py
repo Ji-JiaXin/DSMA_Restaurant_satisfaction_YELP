@@ -10,7 +10,7 @@ df_restaurants = pd.read_csv("data5_tampa_restaurants_master_yelp.csv")
 print("Loaded dataset with", len(df_restaurants), "rows")
 
 # ============================================================
-# 1. ATTRIBUTE PARSING 
+# ATTRIBUTE PARSING 
 
 def parse_outer_dict(attr):
     if pd.isna(attr):
@@ -60,7 +60,7 @@ print("Attributes successfully unnested")
 
 
 # ============================================================
-# 2. UNIVERSAL STRING CLEANER
+# UNIVERSAL STRING CLEANER
 
 def clean_string(x):
     if pd.isna(x):
@@ -76,7 +76,7 @@ def clean_string(x):
 
 
 # ============================================================
-# 3. ATTRIBUTE-SPECIFIC CLEANERS
+# ATTRIBUTE-SPECIFIC CLEANERS
 
 def clean_wifi(x):
     x = clean_string(x)
@@ -131,7 +131,7 @@ def clean_bool(x):
 
 
 # ============================================================
-# 4. APPLY CLEANING 
+# APPLY CLEANING 
 
 df["wifi"]        = df.get("WiFi").apply(clean_wifi)
 df["alcohol"]     = df.get("Alcohol").apply(clean_alcohol)
@@ -146,19 +146,18 @@ df["table_service"]   = df.get("RestaurantsTableService").apply(clean_bool)
 df["credit_cards"]    = df.get("BusinessAcceptsCreditCards").apply(clean_bool)
 
 df["price_range"] = pd.to_numeric(
-    df.get("RestaurantsPriceRange2"), errors="coerce"
-)
+    df.get("RestaurantsPriceRange2"), errors="coerce")
 
 
 # ============================================================
-# 5. MISSINGNESS FLAGS 
+# MISSINGNESS FLAGS 
 df["miss_wifi"]    = df["wifi"].isna().astype(int)
 df["miss_alcohol"] = df["alcohol"].isna().astype(int)
 df["miss_noise"]   = df["noise_level"].isna().astype(int)
 
 
 # ============================================================
-# 6. FINAL COLUMN SELECTION
+# FINAL COLUMN SELECTION
 
 base_cols = ["review_id","business_id","user_id","review_stars", "review_text",
              "review_date", "name","city", "state", "postal_code","latitude",
@@ -181,7 +180,7 @@ print("Final dataset shape:", restaurants_clean.shape)
 
 
 # ============================================================
-# 7. SAVE OUTPUT
+# SAVE 
 
 restaurants_clean.to_csv(
     "data6_Yelp_tampa_restaurants_clean_.csv",
@@ -192,4 +191,5 @@ df_review.to_csv(
     index=False)
 
 print("Saved Yelp_tampa_restaurants_clean_.csv")
+
 
