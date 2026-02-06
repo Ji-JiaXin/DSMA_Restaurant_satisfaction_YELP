@@ -1,0 +1,147 @@
+SELECT
+
+    -- review table
+
+    r.j->>'review_id'                                AS review_id,
+
+    r.j->>'business_id'                              AS business_id,
+
+    r.j->>'user_id'                                  AS user_id,
+
+    (r.j->>'stars')::numeric                         AS review_stars,
+
+    r.j->>'text'                                     AS review_text,
+
+    (r.j->>'date')::date                             AS review_date,
+
+-- business table
+
+    b.j->>'name'                                     AS business_name,
+
+    b.j->>'city'                                     AS city,
+
+    b.j->>'state'                                    AS state,
+
+    (b.j->>'latitude')::numeric                      AS latitude,
+
+    (b.j->>'longitude')::numeric                     AS longitude,
+
+    (b.j->>'stars')::numeric                         AS business_avg_stars,
+
+    b.j->>'categories'                               AS categories,
+
+-- user table
+
+    (u.j->>'review_count')::int                      AS user_review_count,
+
+    (u.j->>'fans')::int                              AS user_fans,
+
+    (u.j->>'average_stars')::numeric                 AS user_avg_stars,
+
+    u_friends.num_friends                            AS user_num_friends,
+
+-- business engagement 
+
+    COALESCE(br_prior.num_reviews_pre, 0)            AS business_reviews_pre_review,
+
+    COALESCE(t_prior.num_tips_pre, 0)                AS business_tips_pre_review,
+
+    COALESCE(c_prior.num_checkins_pre, 0)            AS business_checkins_pre_review
+
+
+
+FROM public.review r
+
+-- business join
+
+LEFT JOIN public.business b
+
+    ON r.j->>'business_id' = b.j->>'business_id'
+
+-- user join
+
+LEFT JOIN public.users u
+
+    ON r.j->>'user_id' = u.j->>'user_id'
+
+-- friends logic
+
+LEFT JOIN LATERAL (
+
+    SELECT
+
+        CASE
+
+            WHEN u.j->>'friends' IS NULL OR u.j->>'friends' = ''
+
+            THEN 0
+
+            ELSE LENGTH(u.j->>'friends')
+
+                 - LENGTH(REPLACE(u.j->>'friends', ',', '')) + 1
+
+        END AS num_friends
+
+) u_friends ON TRUE
+
+
+
+-- prior reviews
+
+LEFT JOIN LATERAL (
+
+    SELECT COUNT(*) AS num_reviews_pre
+
+    FROM public.review r2
+
+    WHERE r2.j->>'business_id' = r.j->>'business_id'
+
+      AND (r2.j->>'date')::date < (r.j->>'date')::date
+
+) br_prior ON TRUE
+
+
+
+-- prior tips
+
+LEFT JOIN LATERAL (
+
+    SELECT COUNT(*) AS num_tips_pre
+
+    FROM public.tip t
+
+    WHERE t.j->>'business_id' = r.j->>'business_id'
+
+      AND (t.j->>'date')::date < (r.j->>'date')::date
+
+) t_prior ON TRUE
+
+
+
+-- prior checkins
+
+LEFT JOIN LATERAL (
+
+    SELECT COUNT(*) AS num_checkins_pre
+
+    FROM public.checkin c,
+
+         LATERAL unnest(string_to_array(c.j->>'date', ',')) AS d(date_str)
+
+    WHERE c.j->>'business_id' = r.j->>'business_id'
+
+      AND d.date_str::date < (r.j->>'date')::date
+
+) c_prior ON TRUE
+
+
+
+-- Final filtering
+
+WHERE b.j->>'city' = 'Tampa'
+
+  AND strpos(b.j->>'categories', 'Restaurants') > 0
+
+  AND (r.j->>'date')::date BETWEEN
+
+      DATE '2012-01-01' AND DATE '2022-12-31';

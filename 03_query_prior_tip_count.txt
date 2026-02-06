@@ -1,0 +1,8 @@
+SELECT 
+    r.j->>'review_id' AS review_id,
+    COUNT(t.j->>'business_id') AS business_tips_pre_review
+FROM public.review r
+LEFT JOIN public.tip t ON r.j->>'business_id' = t.j->>'business_id'
+    AND (t.j->>'date')::date < (r.j->>'date')::date
+WHERE (r.j->>'date')::date BETWEEN '2012-01-01' AND '2022-12-31'
+GROUP BY r.j->>'review_id';

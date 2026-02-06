@@ -1,0 +1,36 @@
+SELECT
+    -- review info
+    r.j->>'review_id' AS review_id,
+    r.j->>'business_id' AS business_id,
+    r.j->>'user_id' AS user_id,
+    (r.j->>'stars')::numeric AS review_stars,
+    r.j->>'text' AS review_text,
+    (r.j->>'date')::date AS review_date,
+
+    -- business info 
+    b.j->>'name' AS name,
+    b.j->>'city' AS city,
+    b.j->>'state' AS state,
+    b.j->>'postal_code' AS postal_code,
+    (b.j->>'latitude')::numeric AS latitude,
+    (b.j->>'longitude')::numeric AS longitude,
+    (b.j->>'stars')::numeric AS business_avg_stars,
+    (b.j->>'review_count')::int AS business_review_count,
+    b.j->'attributes' AS attributes,
+    b.j->'categories' AS categories,
+
+    -- user info
+    (u.j->>'review_count')::int AS user_review_count,
+    (u.j->>'fans')::int AS user_fans,
+    (u.j->>'average_stars')::numeric AS user_avg_stars,
+    CASE
+        WHEN u.j->>'friends' IS NULL OR u.j->>'friends' = '' THEN 0
+        ELSE LENGTH(u.j->>'friends') - LENGTH(REPLACE(u.j->>'friends', ',', '')) + 1
+    END AS user_num_friends
+
+FROM public.review r
+JOIN public.business b ON r.j->>'business_id' = b.j->>'business_id'
+LEFT JOIN public.users u ON r.j->>'user_id' = u.j->>'user_id'
+WHERE b.j->>'city' = 'Tampa'
+  AND strpos(b.j->>'categories', 'Restaurants') > 0
+  AND (r.j->>'date')::date BETWEEN '2012-01-01' AND '2022-12-31';

@@ -1,0 +1,9 @@
+SELECT 
+    review_id,
+    (COUNT(*) OVER (PARTITION BY business_id ORDER BY review_date ASC RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)) - 1 AS business_reviews_pre_review
+FROM (
+    SELECT r.j->>'review_id' as review_id, r.j->>'business_id' as business_id, (r.j->>'date')::date as review_date
+    FROM public.review r
+    JOIN public.business b ON r.j->>'business_id' = b.j->>'business_id'
+    WHERE b.j->>'city' = 'Tampa'
+) sub;
